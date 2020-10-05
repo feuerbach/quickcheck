@@ -35,6 +35,7 @@ import Test.QuickCheck.Random
 import Data.List
 import Data.Ord
 import Data.Maybe
+import GHC.Stack
 
 --------------------------------------------------------------------------
 -- ** Generator type
@@ -116,7 +117,7 @@ getSize = sized pure
 
 -- | Overrides the size parameter. Returns a generator which uses
 -- the given size instead of the runtime-size parameter.
-resize :: Int -> Gen a -> Gen a
+resize :: HasCallStack => Int -> Gen a -> Gen a
 resize n _ | n < 0 = error "Test.QuickCheck.resize: negative size"
 resize n (MkGen g) = MkGen (\r _ -> g r n)
 
@@ -181,13 +182,13 @@ gen `suchThatMaybe` p = sized (\n -> try n (2*n))
 
 -- | Randomly uses one of the given generators. The input list
 -- must be non-empty.
-oneof :: [Gen a] -> Gen a
+oneof :: HasCallStack => [Gen a] -> Gen a
 oneof [] = error "QuickCheck.oneof used with empty list"
 oneof gs = choose (0,length gs - 1) >>= (gs !!)
 
 -- | Chooses one of the given generators, with a weighted random distribution.
 -- The input list must be non-empty.
-frequency :: [(Int, Gen a)] -> Gen a
+frequency :: HasCallStack => [(Int, Gen a)] -> Gen a
 frequency [] = error "QuickCheck.frequency used with empty list"
 frequency xs
   | any (< 0) (map fst xs) =
@@ -204,7 +205,7 @@ frequency xs0 = choose (1, tot) >>= (`pick` xs0)
   pick _ _  = error "QuickCheck.pick used with empty list"
 
 -- | Generates one of the given values. The input list must be non-empty.
-elements :: [a] -> Gen a
+elements :: HasCallStack => [a] -> Gen a
 elements [] = error "QuickCheck.elements used with empty list"
 elements xs = (xs !!) `fmap` choose (0, length xs - 1)
 
@@ -222,7 +223,7 @@ shuffle xs = do
 -- among an initial segment of the list. The size of this initial
 -- segment increases with the size parameter.
 -- The input list must be non-empty.
-growingElements :: [a] -> Gen a
+growingElements :: HasCallStack => [a] -> Gen a
 growingElements [] = error "QuickCheck.growingElements used with empty list"
 growingElements xs = sized $ \n -> elements (take (1 `max` size n) xs)
   where
